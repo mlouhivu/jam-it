@@ -4,8 +4,9 @@ index=index
 # output file name
 output=lecture-slides.pdf
 
-# default page selection
-pages='1-'
+# default page selections
+pages_first='2-'   # first file in a section
+pages_normal='1-'  # all other files
 
 # prefix for temp files
 tmp=.tmp
@@ -22,11 +23,9 @@ jam() {
 }
 add_to_manifest() {
     local file=$1
-    local range=$2
-    [ -z "$range" ] && range="1-"
 
     local pagecount=$(pdfinfo $file | grep Pages | cut -c8- | tr -d ' ')
-    local spec="$out $range"
+    local spec="$out 1-"
     if (( (pagecount % 2) == 1 ))
     then
         spec="${spec},{}"
@@ -55,13 +54,19 @@ do
             out=$tmp-${o}.pdf
             let "o++"
             jam $out $todo
-            add_to_manifest $out 2-
+            add_to_manifest $out
             todo=""
         fi
         out=$tmp-$(basename $name)
         pdfjoin $name $pages --outfile $out
         add_to_manifest $out
     else
+        if [[ $todo != "" ]]
+        then
+            pages=$pages_normal
+        else
+            pages=$pages_first
+        fi
         todo="$todo $name $pages"
     fi
 done
@@ -70,7 +75,7 @@ then
     out=$tmp-${o}.pdf
     let "o++"
     jam $out $todo
-    add_to_manifest $out 2-
+    add_to_manifest $out
 fi
 
 # jam it all together
