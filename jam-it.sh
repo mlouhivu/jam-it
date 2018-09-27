@@ -21,8 +21,12 @@ jam() {
         --frame true --outfile $output -- $joined 1-
 }
 add_to_manifest() {
-    local pagecount=$(pdfinfo $1 | grep Pages | cut -c8- | tr -d ' ')
-    local spec="$out 1-"
+    local file=$1
+    local range=$2
+    [ -z "$range" ] && range="1-"
+
+    local pagecount=$(pdfinfo $file | grep Pages | cut -c8- | tr -d ' ')
+    local spec="$out $range"
     if (( (pagecount % 2) == 1 ))
     then
         spec="${spec},{}"
@@ -51,7 +55,7 @@ do
             out=$tmp-${o}.pdf
             let "o++"
             jam $out $todo
-            add_to_manifest $out
+            add_to_manifest $out 2-
             todo=""
         fi
         out=$tmp-$(basename $name)
@@ -66,7 +70,7 @@ then
     out=$tmp-${o}.pdf
     let "o++"
     jam $out $todo
-    add_to_manifest $out
+    add_to_manifest $out 2-
 fi
 
 # jam it all together
