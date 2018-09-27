@@ -4,8 +4,6 @@ index=index
 # output file name
 output=lecture-slides.pdf
 
-# pdfjam options to use
-options="--nup 2x4 --a4paper --delta '0.05cm 1.5cm' --scale 0.95 --frame true"
 # default page selection
 pages='1-'
 
