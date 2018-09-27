@@ -1,5 +1,5 @@
 #!/bin/bash
-# file containing a list of input files (@ marks a title slide)
+# file containing a list of input files (@ marks A4 PDFs == include as-is)
 index=index
 # output file name
 output=lecture-slides.pdf
@@ -8,9 +8,11 @@ output=lecture-slides.pdf
 pages_first='2-'   # first file in a section
 pages_normal='1-'  # all other files
 
-# prefix for temp files
+# prefix for temp files (be careful!)
 tmp=.tmp
 
+# joins all PDF pages (files and page selections given as arguments)
+# and then jams multiple pages into a single page
 jam() {
     local output=$1
     shift
@@ -21,6 +23,7 @@ jam() {
     pdfjam --nup 2x4 --a4paper --delta '0.05cm 1.5cm' --scale 0.95 \
         --frame true --outfile $output -- $joined 1-
 }
+# queues a PDF to the final output (and adds an empty page if needed)
 add_to_manifest() {
     local file=$1
 
@@ -49,6 +52,7 @@ do
 
     if (( $title ))
     then
+        # check if previous section needs to be processed first
         if [[ $todo != "" ]]
         then
             out=$tmp-${o}.pdf
@@ -57,10 +61,12 @@ do
             add_to_manifest $out
             todo=""
         fi
+        # include the entire A4 PDF as it is
         out=$tmp-$(basename $name)
-        pdfjoin $name $pages --outfile $out
+        pdfjoin $name $pages_normal --outfile $out
         add_to_manifest $out
     else
+        # select correct page range and add the file to the TODO list
         if [[ $todo != "" ]]
         then
             pages=$pages_normal
@@ -70,6 +76,7 @@ do
         todo="$todo $name $pages"
     fi
 done
+# check if previous section needs to be processed still
 if [[ "$todo" != "" ]]
 then
     out=$tmp-${o}.pdf
@@ -84,4 +91,3 @@ pdfjam $manifest --outfile $output
 
 # remove temp files
 rm ${tmp}*
-
