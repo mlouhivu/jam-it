@@ -12,7 +12,29 @@ pages='1-'
 # prefix for temp files
 tmp=.tmp
 
+jam() {
+    local output=$1
+    shift
+    local args="$@"
+    joined=$tmp-joined.pdf
+
+    pdfjoin --outfile $joined -- $args
+    pdfjam --nup 2x4 --a4paper --delta '0.05cm 1.5cm' --scale 0.95 \
+        --frame true --outfile $output -- $joined 1-
+}
+add_to_manifest() {
+    local pagecount=$(pdfinfo $1 | grep Pages | cut -c8- | tr -d ' ')
+    local spec="$out 1-"
+    if (( (pagecount % 2) == 1 ))
+    then
+        spec="${spec},{}"
+    fi
+    manifest="$manifest $spec"
+}
+
 manifest=""
+todo=""
+o=0
 for name in $(cat index)
 do
     echo "> $name"
@@ -24,25 +46,30 @@ do
         name=${name:1}
     fi
 
-    out=$tmp-$(basename $name)
-
     if (( $title ))
     then
-        cp $name $out
+        if [[ $todo != "" ]]
+        then
+            out=$tmp-${o}.pdf
+            let "o++"
+            jam $out $todo
+            add_to_manifest $out
+            todo=""
+        fi
+        out=$tmp-$(basename $name)
+        pdfjoin $name $pages --outfile $out
+        add_to_manifest $out
     else
-#        pdfjam $options --outfile $out -- $name $pages
-        pdfjam --nup 2x4 --a4paper --delta '0.05cm 1.5cm' --scale 0.95 \
-            --frame true --outfile $out -- $name $pages
+        todo="$todo $name $pages"
     fi
-    pagecount=$(pdfinfo $out | grep Pages | cut -c8- | tr -d ' ')
-
-    spec="$out 1-"
-    if (( (pagecount % 2) == 1 ))
-    then
-        spec="${spec},{}"
-    fi
-    manifest="$manifest $spec"
 done
+if [[ "$todo" != "" ]]
+then
+    out=$tmp-${o}.pdf
+    let "o++"
+    jam $out $todo
+    add_to_manifest $out
+fi
 
 # jam it all together
 echo ">> $manifest"
