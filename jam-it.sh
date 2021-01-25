@@ -39,7 +39,7 @@ add_to_manifest() {
 manifest=""
 todo=""
 o=0
-for name in $(cat index)
+for name in $(grep -v "^#" $index)
 do
     echo "> $name"
     # check for title slides
